@@ -19,8 +19,8 @@ func main() {
 
 	router := gin.Default()
 
-	router.GET("/health", handler.Health)
-	router.GET("/info", handler.Info(cfg.Name))
+	router.GET("/user-service/health", handler.Health)
+	router.GET("/user-service/info", handler.Info(cfg.Name))
 
 	server := &http.Server{
 		Addr:    ":" + cfg.Port,
