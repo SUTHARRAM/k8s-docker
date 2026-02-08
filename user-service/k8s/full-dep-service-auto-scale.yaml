@@ -1,0 +1,70 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+spec:
+  replicas: 1  # initial number of pods
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      containers:
+      - name: user-service
+        image: user-service-img
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080
+        env:
+          - name: PORT
+            value: "8080"
+          - name: SERVICE_NAME
+            value: "USER-SERVICE"
+        resources:
+          requests:
+            cpu: 50m
+          limits:
+            cpu: 200m
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+spec:
+  type: NodePort   # exposes service to host
+  selector:
+    app: user-service
+  ports:
+    - protocol: TCP
+      port: 80        # cluster port
+      targetPort: 8080
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: user-service-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: user-service
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 50   # realistic CPU target
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 180  # wait 3 minutes before scaling down
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 60
